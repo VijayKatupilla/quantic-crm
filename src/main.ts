@@ -43,15 +43,17 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import csurf from 'csurf';
 import { ValidationPipe } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // --- Security Middleware ---
   app.use(helmet());
   app.enableCors({ origin: '*', methods: 'GET,POST,PUT,DELETE' });
   app.use(cookieParser());
 
-  // ❌ Disable this for Postman testing
+  // ❌ Disabled CSRF for Postman testing (enabled in prod)
   // app.use(
   //   csurf({
   //     cookie: {
@@ -61,6 +63,7 @@ async function bootstrap() {
   //   }),
   // );
 
+  // --- Global Validation ---
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -69,7 +72,21 @@ async function bootstrap() {
     }),
   );
 
+  // --- Swagger Documentation ---
+  const config = new DocumentBuilder()
+    .setTitle('Quantic CRM API')
+    .setDescription('NestJS CRM Backend with Auth, Leads, Accounts, and Activities modules')
+    .setVersion('1.0')
+    .addBearerAuth() // for JWT token support
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('docs', app, document);
+
   await app.listen(3000);
   console.log('🚀 Secure server running on http://localhost:3000');
+  console.log('📘 Swagger docs available at http://localhost:3000/docs');
 }
+
 bootstrap();
+

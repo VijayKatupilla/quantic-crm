@@ -1,208 +1,237 @@
-
 # Quantic CRM – Technical Assessment (NestJS + SQLite + WebSocket)
 
-A lightweight CRM backend built with **NestJS**, **SQLite**, and **WebSockets**, implementing secure authentication, CRUD operations, and real-time updates.
+A secure, modular CRM backend built with **NestJS**, **SQLite**, and **WebSockets**, implementing authentication, role-based access, CRUD operations, and real-time updates with end-to-end testing.
 
 ---
 
-## 🚀 Tech Stack
+## 🚀 Overview
 
-- **Node.js** (v20+)
-- **NestJS** (v10)
-- **TypeScript**
-- **SQLite (better-sqlite3)**
-- **JWT Authentication**
-- **Helmet / Cookie-Parser / CSRF (secure middleware)**
-- **WebSockets (Socket.IO)**
-- **Jest (unit & e2e testing)**
+This project fulfills the **Quantic Technical Assessment** requirements.  
+It provides a secure CRM backend that includes:
+- Authentication and authorization (JWT, refresh tokens, RBAC)
+- CRUD operations for Leads, Accounts, and Activities
+- Real-time updates through WebSocket
+- Security best practices (Helmet, CSRF, Validation)
+- SQLite integration with sample seeded data
+- Automated testing using Jest
+
+---
+
+## 🧱 Tech Stack
+
+- **NestJS (v10)** – Modular Node.js framework
+- **TypeScript** – Strongly typed language for scalable backend
+- **SQLite (better-sqlite3)** – Lightweight relational database
+- **JWT** – Authentication with access & refresh tokens
+- **WebSockets (Socket.IO)** – Real-time client notifications
+- **Helmet / CSRF / ValidationPipe** – Security & request validation
+- **Jest** – Testing framework for unit and e2e tests
 
 ---
 
 ## ⚙️ Setup & Installation
 
-### 1️⃣ Clone Repository
-
+### 1️⃣ Clone the Repository
 ```bash
-# Local setup
-git clone https://github.com/<VijayKatupilla>/quantic-crm.git
+git clone https://github.com/VijayKatupilla/quantic-crm.git
 cd quantic-crm
-
 2️⃣ Install Dependencies
+bash
+Copy code
 npm install
-
-3️⃣ Run in Development
+3️⃣ Run in Development Mode
+bash
+Copy code
 npm run start:dev
+Server will start at:
 
+🌐 http://localhost:3000
 
-Server will start on: http://localhost:3000
+Swagger API Docs available at:
 
-🧱 Database
+📘 http://localhost:3000/docs
 
-SQLite file auto-generated at: crm.db
+🧱 Database Setup
+Database file: crm.db
 
-Initial seed runs automatically on first launch via seed.sql
+Created automatically on first launch
 
-If you want to reset, delete crm.db and restart the app.
+Pre-seeded with sample users, leads, and accounts
+
+If needed, delete crm.db to regenerate with seed.sql
 
 🔐 Authentication API
 Signup
-POST http://localhost:3000/auth/signup
-Content-Type: application/json
+http
+Copy code
+POST /auth/signup
+Request Body:
 
+json
+Copy code
 {
   "email": "user1@example.com",
-  "password": "test123",
+  "password": "Password123",
   "role": "rep"
 }
+Response:
 
-
-✅ Response:
-
+json
+Copy code
 {
   "message": "Signup successful",
-  "accessToken": "xxxxx",
-  "refreshToken": "yyyyy"
+  "accessToken": "...",
+  "refreshToken": "..."
 }
-
 Login
-POST http://localhost:3000/auth/login
-Content-Type: application/json
+http
+Copy code
+POST /auth/login
+Request Body:
 
+json
+Copy code
 {
   "email": "user1@example.com",
-  "password": "test123"
+  "password": "Password123"
 }
+Response:
 
-
-✅ Response:
-
+json
+Copy code
 {
   "message": "Login successful",
-  "accessToken": "xxxxx",
-  "refreshToken": "yyyyy"
+  "accessToken": "...",
+  "refreshToken": "..."
 }
-
 📊 Leads API
-Create a Lead
-POST http://localhost:3000/leads
-Authorization: Bearer <accessToken>
+Create Lead
+http
+Copy code
+POST /leads
+Body:
 
+json
+Copy code
 {
   "name": "John Doe",
-  "company": "Acme Inc",
-  "status": "New"
+  "company": "Acme Corp",
+  "status": "new"
 }
+List Leads (with filters)
+http
+Copy code
+GET /leads?status=qualified&createdFrom=2025-01-01&createdTo=2025-12-31
+Convert Lead
+http
+Copy code
+POST /leads/:id/convert
+✅ Converts a lead into an Account and triggers a WebSocket update.
 
+🏢 Accounts API
+Get Accounts
+http
+Copy code
+GET /accounts
+Returns all accounts with a count of related activities.
 
-✅ Response:
+CRUD
+POST /accounts
 
+GET /accounts/:id
+
+PUT /accounts/:id
+
+DELETE /accounts/:id
+
+🗓 Activities API
+Add Activity
+http
+Copy code
+POST /accounts/:id/activities
+Body:
+
+json
+Copy code
 {
-  "id": "uuid",
-  "name": "John Doe",
-  "company": "Acme Inc",
-  "status": "New"
+  "type": "call",
+  "notes": "Follow-up discussion",
+  "next_follow_up": "2025-11-01"
 }
+Get Activities
+http
+Copy code
+GET /accounts/:id/activities
+✅ Each activity has type, notes, and optional next_follow_up.
 
-List Leads
-GET http://localhost:3000/leads
-Authorization: Bearer <accessToken>
+🔁 WebSocket – Live Updates
+Endpoint: /ws/updates
 
-🔁 WebSocket: Live Updates
-Test via Browser Console
+Browser Test Example:
+
+js
+Copy code
 const socket = io("http://localhost:3000", { path: "/ws/updates" });
 socket.on("activityUpdate", (data) => console.log("Live:", data));
+When you create or update a lead/activity, the socket emits:
 
+json
+Copy code
+{
+  "event": "created",
+  "payload": {
+    "id": "uuid",
+    "type": "call",
+    "notes": "Follow-up discussion"
+  }
+}
+🔒 Security
+Feature	Description
+Helmet	Secures HTTP headers
+CORS	Enabled for all domains
+CSRF	Implemented but disabled for testing
+ValidationPipe	DTO validation and sanitization
+JWT Tokens	Access + Refresh with expiry
+SQL Protection	Uses parameterized queries
+RBAC	Manager vs Rep roles enforced
 
-Then in Postman, perform:
+🧪 Testing
+Run Jest tests:
 
-POST http://localhost:3000/leads
-
-
-✅ You should see in browser:
-
-Live: { event: "created", payload: { id: "...", name: "...", ... } }
-
-🧪 Testing (Jest)
-
-Run all tests:
-
+bash
+Copy code
 npm test
+✅ Example output:
 
-
-✅ Example Output:
-
+bash
+Copy code
 PASS  src/app.e2e-spec.ts
   AppController (e2e)
-    ✓ / (GET) (43 ms)
-
-🧰 Deliverables
-
-✅ Include these files for submission:
-
-/src source folder
-
-crm.db SQLite database
-
-README.md
-
-package.json
-
-(optional) seed.sql
-
-📄 Notes
-
-CSRF middleware is implemented using csurf, but commented out for Postman testing.
-
-All sensitive operations are JWT-protected.
-
-WebSocket Gateway broadcasts updates across all connected clients.
+    ✓ / (GET) (42 ms)
+📄 Deliverables
+Item	Description
+Source Code	GitHub Repository
+SQLite File	crm.db preloaded with API data
+Documentation	README.md + Swagger /docs
+Testing	Jest suite and Postman tested endpoints
 
 👨‍💻 Author
-
 Vijay Katupilla
 Software Engineer | Java & QA Automation | Cloud & Data Quality Specialist
-📧 [your.email@example.com
-]
+📧 vijay.katupilla@example.com
 🔗 https://github.com/VijayKatupilla
 
----
+🧩 Submission Notes:
+This implementation fulfills all assessment requirements:
 
-## ✅ Step 2: Clean Git setup (local + remote)
+Authentication with JWT & refresh tokens
 
-1. **Initialize Git locally**
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial commit - Quantic CRM assessment complete"
-Add your GitHub remote
+Role-based permissions
 
-bash
-Copy code
-git remote add origin https://github.com/VijayKatupilla/quantic-crm.git
-Push your work
+CRUD for Leads, Accounts, Activities
 
-bash
-Copy code
-git branch -M main
-git push -u origin main
-Verify
-Visit:
-👉 https://github.com/VijayKatupilla/quantic-crm
-and confirm your files appear (including README.md and crm.db).
+Real-time WebSocket updates
 
-🏁 That’s it!
+SQL joins, validation, and testing
 
-You now have:
-
-Full working project ✅
-
-Clean, documented README.md ✅
-
-Passing Jest tests ✅
-
-Remote Git repo ready for review ✅
-
-🧩 Submission Info
-Submitted by: Vijay Katupilla  
-Date: October 25, 2025  
-Notes: All APIs tested locally, database pre-seeded with sample data via API calls.
+Swagger documentation at /docs
