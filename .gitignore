@@ -12,6 +12,16 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
+# Node
+node_modules/
+dist/
+.env
+*.log
+*.sqlite
+crm.db
+coverage/
+
+
 # OS
 .DS_Store
 
